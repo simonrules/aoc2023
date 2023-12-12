@@ -6,6 +6,7 @@ class Day03(filename: String) {
     private val schematic = File(filename).readLines()
     private val schematicNumbers = mutableListOf<SchematicNumber>()
     private val symbols = mutableSetOf<Pair<Int, Int>>()
+    private val possibleGears = mutableMapOf<Pair<Int, Int>, MutableList<Int>>()
 
     init {
         schematic.forEachIndexed { y, line ->
@@ -40,21 +41,25 @@ class Day03(filename: String) {
         val w = schematic[0].length
         val h = schematic.size
 
-        //print("${p.code} ${p.startX} ${p.endX} ")
         for (y in p.y - 1..p.y + 1) {
             for (x in p.startX - 1..p.endX + 1) {
                 if (y in 0 until h) {
                     if (x in 0 until w) {
                         val c = schematic[y][x]
                         if (!c.isDigit() && c != '.') {
-                            //println("$c")
+                            if (c == '*') {
+                                // Keep track of possible gears for part 2
+                                if (!possibleGears.containsKey(Pair(x, y))) {
+                                    possibleGears[Pair(x, y)] = mutableListOf()
+                                }
+                                possibleGears[Pair(x, y)]!!.add(p.code)
+                            }
                             return true
                         }
                     }
                 }
             }
         }
-        //println()
         return false
     }
 
@@ -67,9 +72,20 @@ class Day03(filename: String) {
         }
         return sum
     }
+
+    fun part2(): Long {
+        var sum = 0L
+        possibleGears.forEach {
+            if (it.value.size == 2) {
+                sum += it.value[0] * it.value[1]
+            }
+        }
+        return sum
+    }
 }
 
 fun main() {
     val day03 = Day03("day03/input.txt")
     println(day03.part1())
+    println(day03.part2())
 }
