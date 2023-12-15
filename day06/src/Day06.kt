@@ -15,28 +15,57 @@ class Day06(filename: String) {
         }
     }
 
-    fun doesWin(): Boolean {
-        return false
-    }
+    private fun computePossibilities(time: Int): List<Int> {
+        val possibilities = mutableListOf<Int>()
 
-    fun part1(): Long {
-        race.forEach {
-            for (t in 1 until it.time) {
-                
-            }
+        for (t in 1 until time) {
+            possibilities.add(t * (time - t))
         }
-        return 0L
+
+        return possibilities.toList()
     }
 
+    fun part1(): Int {
+        var product = 1
+        for (r in race) {
+            val possibilities = computePossibilities(r.time)
+            product *= possibilities.count { it > r.distance }
+        }
+
+        return product
+    }
 
     fun part2(): Long {
+        // For odd times, sequence from largest two down is diff 2, 4, 6, 8...
+        // For even, sequence from largest one down is diff 1, 3, 5, 7...
+        // Both test and input are even.
+        val time = 30L
+        val distance = 200L
 
-        return 0L
+        // The longest distance is in the middle
+        val longest = (time / 2L) * (time - time / 2L)
+
+        // Now we need to know how many possible distances are longer than distance
+        // Try binary search
+        var low = 1L
+        var high = time / 2L
+
+        while (low != high) {
+            val guess = low + (high - low) / 2L
+            val product = guess * (time - guess)
+            if (product < distance) {
+                low = guess
+            } else if (product > distance) {
+                high = guess
+            }
+        }
+
+        return 0
     }
 }
 
 fun main() {
-    val day06 = Day06("day06/input.txt")
+    val day06 = Day06("day06/test1.txt")
     println(day06.part1())
     println(day06.part2())
 }
