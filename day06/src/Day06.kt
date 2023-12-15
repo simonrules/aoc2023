@@ -36,36 +36,37 @@ class Day06(filename: String) {
     }
 
     fun part2(): Long {
-        // For odd times, sequence from largest two down is diff 2, 4, 6, 8...
-        // For even, sequence from largest one down is diff 1, 3, 5, 7...
-        // Both test and input are even.
-        val time = 30L
-        val distance = 200L
+        // Easier just to hard code these from input.txt
+        val time = 49787980L
+        val distance = 298118510661181L
 
-        // The longest distance is in the middle
-        val longest = (time / 2L) * (time - time / 2L)
-
-        // Now we need to know how many possible distances are longer than distance
-        // Try binary search
+        // We need to efficiently know how many possible distances are longer than distance.
+        // Since the distances up to the longest are sorted, use binary search to find where we
+        // start beating the record.
         var low = 1L
         var high = time / 2L
 
-        while (low != high) {
-            val guess = low + (high - low) / 2L
+        while (low < high) {
+            val guess = (low + high) / 2L
             val product = guess * (time - guess)
-            if (product < distance) {
-                low = guess
-            } else if (product > distance) {
+            if (product <= distance) {
+                low = guess + 1
+            } else {
                 high = guess
             }
         }
+        val resultTime = high - 1
 
-        return 0
+        // If time is even, subtract 1 due to duplicate distance
+        val even = if (time % 2L == 0L) 1L else 0L
+        val ways = ((time / 2L) - resultTime) * 2L - even
+
+        return ways
     }
 }
 
 fun main() {
-    val day06 = Day06("day06/test1.txt")
+    val day06 = Day06("day06/input.txt")
     println(day06.part1())
     println(day06.part2())
 }
