@@ -1,7 +1,21 @@
 import java.io.File
 
-data class Hand(val value: String): Comparable<Hand> {
-    private val rank = mapOf(
+data class Hand(val value: String, private val usesJoker: Boolean = false): Comparable<Hand> {
+    private val rank = if (usesJoker) mapOf(
+        'A' to 14,
+        'K' to 13,
+        'Q' to 12,
+        'T' to 10,
+        '9' to 9,
+        '8' to 8,
+        '7' to 7,
+        '6' to 6,
+        '5' to 5,
+        '4' to 4,
+        '3' to 3,
+        '2' to 2,
+        'J' to 1,
+    ) else mapOf(
         'A' to 14,
         'K' to 13,
         'Q' to 12,
@@ -107,12 +121,14 @@ class Day07(filename: String) {
     }
 
     fun part2(): Int {
+        //val hands = listOf(Hand("T55J5", true), Hand("KTJJT", true), Hand("QQQJA", true))
+        //hands.sorted().forEach { println(it.value) }
         return 0
     }
 }
 
 fun main() {
     val day07 = Day07("day07/input.txt")
-    println(day07.part1())
+    //println(day07.part1())
     println(day07.part2())
 }
