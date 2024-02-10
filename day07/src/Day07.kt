@@ -32,6 +32,7 @@ data class Hand(val value: String, private val usesJoker: Boolean = false): Comp
     )
 
     private val cardFrequency: Map<Char, Int>
+    private val frequencyCard: List<Pair<Int, Char>>
 
     init {
         val frequency = mutableMapOf<Char, Int>()
@@ -39,6 +40,7 @@ data class Hand(val value: String, private val usesJoker: Boolean = false): Comp
             frequency[it] = 1 + frequency.getOrDefault(it, 0)
         }
         cardFrequency = frequency.toMap()
+        frequencyCard = cardFrequency.map { Pair(it.value, it.key) }.sortedByDescending { it.first }
     }
 
     override fun compareTo(other: Hand): Int {
@@ -56,40 +58,72 @@ data class Hand(val value: String, private val usesJoker: Boolean = false): Comp
     val numJokers: Int
         get() = value.count { it == 'J' }
 
-    fun getStrength(): Int {
-        val values = cardFrequency.values.sorted().reversed()
-
+    fun getOriginalStrength(): Int {
         // Five of a kind
-        if (values.size == 1) {
+        if (frequencyCard.size == 1) {
             return 7
         }
 
         // Four of a kind
-        if (values[0] == 4) {
+        if (frequencyCard[0].first == 4) {
             return 6
         }
 
         // Full house
-        if ((values[0] == 3) && (values[1] == 2)) {
+        if ((frequencyCard[0].first == 3) && (frequencyCard[1].first == 2)) {
             return 5
         }
 
         // Three of a kind
-        if (values[0] == 3) {
+        if (frequencyCard[0].first == 3) {
             return 4
         }
 
         // Two pair
-        if ((values[0] == 2) && (values[1] == 2)) {
+        if ((frequencyCard[0].first == 2) && (frequencyCard[1].first == 2)) {
             return 3
         }
 
         // One pair
-        if (values[0] == 2) {
+        if (frequencyCard[0].first == 2) {
             return 2
         }
 
         return 1
+    }
+
+    private fun getBestOption(): Char {
+        // Three/four of a kind
+        if (frequencyCard[0].first >= 3) {
+            return frequencyCard[0].second
+        }
+
+        // Two pair
+        if ((frequencyCard[0].first == 2) && (frequencyCard[1].first == 2)) {
+            if (rank[frequencyCard[0].second]!! > rank[frequencyCard[1].second]!!)
+                return frequencyCard[0].second
+            else
+                return frequencyCard[1].second
+        }
+
+        // One pair
+        if (frequencyCard[0].first == 2) {
+            return frequencyCard[0].second
+        }
+
+        // high card
+        return value.toSortedSet().last
+    }
+
+    fun getStrength(): Int {
+        if (usesJoker) {
+            val cardToUpgrade = getBestOption()
+            val newHandValue = value.replace('J', cardToUpgrade)
+
+            return Hand(newHandValue, usesJoker = true).getOriginalStrength()
+        } else {
+            return getOriginalStrength()
+        }
     }
 }
 
@@ -115,7 +149,7 @@ class Day07(filename: String) {
         inputList.forEach {
             val hand = Hand(it.first)
             handBids[hand] = it.second
-            handStrengths.add(Pair(hand, hand.getStrength()))
+            handStrengths.add(Pair(hand, hand.getOriginalStrength()))
         }
 
         // I could simplify this by using sort to sort by two things (rank, strength)
@@ -133,27 +167,37 @@ class Day07(filename: String) {
         return sum
     }
 
-    private fun upgradeHand(hand: Hand): Hand {
-        //max-hand-strength = hand-strength
-        //for each non-joker in hand:
-        //  swap each joker with non-joker
-        //  if new-hand-strength > max-hand-strength:
-        //      max-hand-strength = new-hand-strength
-        //return max-hand-strength
-        //val maxHandStrength = hand.
-        return hand
-    }
-
     fun part2(): Int {
-        val hands = listOf(Hand("T55J5", true), Hand("KTJJT", true), Hand("QQQJA", true))
-        val upgradedHands = hands.map { if (it.numJokers > 0) upgradeHand(it) else it }
-        //hands.sorted().forEach { println(it.value) }
-        return 0
+        val handBids = mutableMapOf<Hand, Int>()
+        val handStrengths = mutableListOf<Pair<Hand, Int>>()
+        var sum = 0
+        var rank = 1
+
+        // Pre-process input list
+        inputList.forEach {
+            val hand = Hand(it.first, usesJoker = true)
+            handBids[hand] = it.second
+            handStrengths.add(Pair(hand, hand.getStrength()))
+        }
+
+        for (strength in 1..7) {
+            val hands = handStrengths.filter { it.second == strength }.map { it.first }
+            if (hands.isNotEmpty()) {
+                val sortedHands = hands.sorted()
+                sortedHands.forEach {
+                    sum += rank * handBids[Hand(it.value, usesJoker = true)]!!
+                    rank++
+                }
+            }
+        }
+
+        return sum
     }
 }
 
 fun main() {
     val day07 = Day07("day07/input.txt")
     println(day07.part1())
-    //println(day07.part2())
+    // 246433662 too high
+    println(day07.part2())
 }
