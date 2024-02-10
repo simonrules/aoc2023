@@ -31,6 +31,16 @@ data class Hand(val value: String, private val usesJoker: Boolean = false): Comp
         '2' to 2,
     )
 
+    private val cardFrequency: Map<Char, Int>
+
+    init {
+        val frequency = mutableMapOf<Char, Int>()
+        value.forEach {
+            frequency[it] = 1 + frequency.getOrDefault(it, 0)
+        }
+        cardFrequency = frequency.toMap()
+    }
+
     override fun compareTo(other: Hand): Int {
         value.forEachIndexed { i, value ->
             if (rank[value]!! > rank[other.value[i]]!!) {
@@ -42,31 +52,12 @@ data class Hand(val value: String, private val usesJoker: Boolean = false): Comp
 
         return 0
     }
-}
 
-class Day07(filename: String) {
-    private val handBids = mutableMapOf<Hand, Int>()
-    private val handStrengths = mutableListOf<Pair<Hand, Int>>()
+    val numJokers: Int
+        get() = value.count { it == 'J' }
 
-    init {
-        File(filename).forEachLine {
-            val (hand, bid) = it.split(" ")
-            handBids[Hand(hand)] = bid.toInt()
-            val strength = getHandStrength(countFrequency(hand))
-            handStrengths.add(Pair(Hand(hand), strength))
-        }
-    }
-
-    private fun countFrequency(hand: String): Map<Char, Int> {
-        val frequency = mutableMapOf<Char, Int>()
-        hand.forEach {
-            frequency[it] = 1 + frequency.getOrDefault(it, 0)
-        }
-        return frequency.toMap()
-    }
-
-    private fun getHandStrength(frequency: Map<Char, Int>): Int {
-        val values = frequency.values.sorted().reversed()
+    fun getStrength(): Int {
+        val values = cardFrequency.values.sorted().reversed()
 
         // Five of a kind
         if (values.size == 1) {
@@ -100,10 +91,32 @@ class Day07(filename: String) {
 
         return 1
     }
+}
+
+class Day07(filename: String) {
+    private val inputList: List<Pair<String, Int>>
+
+    init {
+        val list = mutableListOf<Pair<String, Int>>()
+        File(filename).forEachLine {
+            val (cards, bid) = it.split(" ")
+            list.add(Pair(cards, bid.toInt()))
+        }
+        inputList = list.toList()
+    }
 
     fun part1(): Int {
+        val handBids = mutableMapOf<Hand, Int>()
+        val handStrengths = mutableListOf<Pair<Hand, Int>>()
         var sum = 0
         var rank = 1
+
+        // Pre-process input list
+        inputList.forEach {
+            val hand = Hand(it.first)
+            handBids[hand] = it.second
+            handStrengths.add(Pair(hand, hand.getStrength()))
+        }
 
         // I could simplify this by using sort to sort by two things (rank, strength)
         for (strength in 1..7) {
@@ -120,8 +133,20 @@ class Day07(filename: String) {
         return sum
     }
 
+    private fun upgradeHand(hand: Hand): Hand {
+        //max-hand-strength = hand-strength
+        //for each non-joker in hand:
+        //  swap each joker with non-joker
+        //  if new-hand-strength > max-hand-strength:
+        //      max-hand-strength = new-hand-strength
+        //return max-hand-strength
+        //val maxHandStrength = hand.
+        return hand
+    }
+
     fun part2(): Int {
-        //val hands = listOf(Hand("T55J5", true), Hand("KTJJT", true), Hand("QQQJA", true))
+        val hands = listOf(Hand("T55J5", true), Hand("KTJJT", true), Hand("QQQJA", true))
+        val upgradedHands = hands.map { if (it.numJokers > 0) upgradeHand(it) else it }
         //hands.sorted().forEach { println(it.value) }
         return 0
     }
@@ -129,6 +154,6 @@ class Day07(filename: String) {
 
 fun main() {
     val day07 = Day07("day07/input.txt")
-    //println(day07.part1())
-    println(day07.part2())
+    println(day07.part1())
+    //println(day07.part2())
 }
