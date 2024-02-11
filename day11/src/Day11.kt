@@ -44,18 +44,18 @@ class Day11(path: String) {
         return map[pos.y][pos.x]
     }
 
-    private fun getExpansionDistance(a: Point2D, b: Point2D): Int {
+    private fun getExpansionDistance(a: Point2D, b: Point2D, extra: Long = 1L): Long {
         // reorder x and y if needed
         val extraCols = if (a.x < b.x) {
             emptyCols.count { it in a.x..b.x }
         } else {
             emptyCols.count { it in b.x..a.x }
-        }
+        } * extra
         val extraRows = if (a.y < b.y) {
             emptyRows.count { it in a.y..b.y }
         } else {
             emptyRows.count { it in b.y..a.y }
-        }
+        } * extra
 
         return (a.x - b.x).absoluteValue + extraCols + (a.y - b.y).absoluteValue + extraRows
     }
@@ -69,9 +69,20 @@ class Day11(path: String) {
         }
         return distance
     }
+
+    fun part2(): Long {
+        var distance = 0L
+        for (a in 0 until galaxies.size) {
+            for (b in a + 1 until galaxies.size) {
+                distance += getExpansionDistance(galaxies[a], galaxies[b], 999999L)
+            }
+        }
+        return distance
+    }
 }
 
 fun main() {
     val day11 = Day11("day11/input.txt")
     println(day11.part1())
+    println(day11.part2())
 }

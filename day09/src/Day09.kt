@@ -1,7 +1,7 @@
 import java.io.File
 
 class Day09(path: String) {
-    val lists = mutableListOf<List<Long>>()
+    private val lists = mutableListOf<List<Long>>()
     init {
         File(path).forEachLine { line ->
             val values = line.split(" ").map { it.toLong() }
@@ -13,10 +13,6 @@ class Day09(path: String) {
         return list.zip(list.drop(1)) { a, b -> b - a }
     }
 
-    private fun offsetToZero(list: List<Long>): List<Long> {
-        return list.map { it - list[0] }
-    }
-
     private fun getNext(list: List<Long>): Long {
         if (list.all { it == 0L }) {
             return 0
@@ -24,6 +20,15 @@ class Day09(path: String) {
 
         val next = list.last() + getNext(diffBetweenElems(list))
         return next
+    }
+
+    private fun getPrevious(list: List<Long>): Long {
+        if (list.all { it == 0L }) {
+            return 0
+        }
+
+        val previous = list.first() - getPrevious(diffBetweenElems(list))
+                return previous
     }
 
     fun part1(): Long {
@@ -35,8 +40,13 @@ class Day09(path: String) {
         return sum
     }
 
-    fun part2(): Int {
-        return 0
+    fun part2(): Long {
+        var sum = 0L
+        lists.forEach { list ->
+            sum += getPrevious(list)
+        }
+
+        return sum
     }
 }
 
