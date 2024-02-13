@@ -55,10 +55,10 @@ data class Hand(val value: String, private val usesJoker: Boolean = false): Comp
         return 0
     }
 
-    val numJokers: Int
+    private val numJokers: Int
         get() = value.count { it == 'J' }
 
-    fun getOriginalStrength(): Int {
+    private fun getOriginalStrength(): Int {
         // Five of a kind
         if (frequencyCard.size == 1) {
             return 7
@@ -92,37 +92,50 @@ data class Hand(val value: String, private val usesJoker: Boolean = false): Comp
         return 1
     }
 
-    private fun getBestOption(): Char {
-        // Three/four of a kind
-        if (frequencyCard[0].first >= 3) {
-            return frequencyCard[0].second
-        }
-
-        // Two pair
-        if ((frequencyCard[0].first == 2) && (frequencyCard[1].first == 2)) {
-            if (rank[frequencyCard[0].second]!! > rank[frequencyCard[1].second]!!)
-                return frequencyCard[0].second
-            else
-                return frequencyCard[1].second
-        }
-
-        // One pair
-        if (frequencyCard[0].first == 2) {
-            return frequencyCard[0].second
-        }
-
-        // high card
-        return value.toSortedSet().last
-    }
-
     fun getStrength(): Int {
-        if (usesJoker) {
-            val cardToUpgrade = getBestOption()
-            val newHandValue = value.replace('J', cardToUpgrade)
+        val originalStrength = getOriginalStrength()
 
-            return Hand(newHandValue, usesJoker = true).getOriginalStrength()
-        } else {
-            return getOriginalStrength()
+        if (!usesJoker) {
+            return originalStrength
+        }
+
+        when (numJokers) {
+            0 -> {
+                // no change
+                return originalStrength
+            }
+            1 -> {
+                return when (originalStrength) {
+                    1 -> 2 // high card to pair
+                    2 -> 4 // one pair to three of a kind
+                    3 -> 5 // two pair to full house
+                    4 -> 6 // three to four of a kind
+                    6 -> 7 // four to five of a kind
+                    else -> originalStrength
+                }
+            }
+            2 -> {
+                return when (originalStrength) {
+                    2 -> 4 // pair to three of a kind
+                    3 -> 6 // two pair to four of a kind
+                    5 -> 7 // full house to five of a kind
+                    else -> originalStrength
+                }
+            }
+            3 -> {
+                return when (originalStrength) {
+                    4 -> 6 // three to four of a kind
+                    5 -> 7 // full house to five of a kind
+                    else -> originalStrength
+                }
+            }
+            4 -> {
+                return when (originalStrength) {
+                    6 -> 7 // four to five of a kind
+                    else -> originalStrength
+                }
+            }
+            else -> return originalStrength
         }
     }
 }
@@ -149,7 +162,7 @@ class Day07(filename: String) {
         inputList.forEach {
             val hand = Hand(it.first)
             handBids[hand] = it.second
-            handStrengths.add(Pair(hand, hand.getOriginalStrength()))
+            handStrengths.add(Pair(hand, hand.getStrength()))
         }
 
         // I could simplify this by using sort to sort by two things (rank, strength)
@@ -198,6 +211,5 @@ class Day07(filename: String) {
 fun main() {
     val day07 = Day07("day07/input.txt")
     println(day07.part1())
-    // 246433662 too high
     println(day07.part2())
 }
