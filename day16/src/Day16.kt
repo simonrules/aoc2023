@@ -21,7 +21,6 @@ class Day16(path: String) {
     private val width = map[0].length
     private val height = map.size
     private val initialBeam = Beam(Point2D(0, 0), Direction.RIGHT)
-    private val energised = Array(height) { Array(width) { 0 } }
 
     private fun getMapAt(map: List<String>, pos: Point2D): Char {
         return map[pos.y][pos.x]
@@ -31,89 +30,81 @@ class Day16(path: String) {
         return pos.x in 0..<width && pos.y in 0..<height
     }
 
-    private fun energise(pos: Point2D, direction: Direction) {
-        energised[pos.y][pos.x] = energised[pos.y][pos.x] or direction.value
+    private fun energise(values: Array<Array<Int>>, pos: Point2D, direction: Direction) {
+        values[pos.y][pos.x] = values[pos.y][pos.x] or direction.value
     }
 
-    private fun isEnergised(pos: Point2D, direction: Direction): Boolean {
-        return energised[pos.y][pos.x] and direction.value != 0
+    private fun isEnergised(values: Array<Array<Int>>, pos: Point2D, direction: Direction): Boolean {
+        return values[pos.y][pos.x] and direction.value != 0
     }
 
-    fun part1(): Int {
+    private fun checkAndMaybeAddBeam(
+        beams: MutableList<Beam>,
+        energised: Array<Array<Int>>,
+        beam: Beam,
+        nextDirection: Direction
+    ) {
+        val nextPosition = beam.getNextPosition(nextDirection)
+        if (isInBounds(nextPosition) && !isEnergised(energised, nextPosition, nextDirection)) {
+            beams.add(Beam(nextPosition, nextDirection))
+        }
+    }
+
+    private fun mirrorUpToLeft(direction: Direction): Direction {
+        return when (direction) {
+            Direction.UP -> Direction.LEFT
+            Direction.RIGHT -> Direction.DOWN
+            Direction.DOWN -> Direction.RIGHT
+            Direction.LEFT -> Direction.UP
+        }
+    }
+
+    private fun mirrorUpToRight(direction: Direction): Direction {
+        return when (direction) {
+            Direction.UP -> Direction.RIGHT
+            Direction.RIGHT -> Direction.UP
+            Direction.DOWN -> Direction.LEFT
+            Direction.LEFT -> Direction.DOWN
+        }
+    }
+
+    private fun solve(start: Beam): Int {
+        val energised = Array(height) { Array(width) { 0 } }
         val beams = mutableListOf<Beam>()
-        beams.add(initialBeam)
+        beams.add(start)
 
         while (beams.isNotEmpty()) {
             val beam = beams.removeFirst()
-            energise(beam.position, beam.direction)
+            energise(energised, beam.position, beam.direction)
 
             // Test map location
             val location = getMapAt(map, beam.position)
             if (location == '.') {
                 // empty space
-                val nextPosition = beam.getNextPosition(beam.direction)
-                if (isInBounds(nextPosition) && !isEnergised(nextPosition, beam.direction)) {
-                    beams.add(Beam(nextPosition, beam.direction))
-                }
+                checkAndMaybeAddBeam(beams, energised, beam, beam.direction)
             } else if (location == '\\') {
                 // mirror
-                val nextDirection = when(beam.direction) {
-                    Direction.UP -> Direction.LEFT
-                    Direction.RIGHT -> Direction.DOWN
-                    Direction.DOWN -> Direction.RIGHT
-                    Direction.LEFT -> Direction.UP
-                }
-                val nextPosition = beam.getNextPosition(nextDirection)
-                if (isInBounds(nextPosition) && !isEnergised(nextPosition, nextDirection)) {
-                    beams.add(Beam(nextPosition, nextDirection))
-                }
+                checkAndMaybeAddBeam(beams, energised, beam, mirrorUpToLeft(beam.direction))
             } else if (location == '/') {
                 // mirror
-                val nextDirection = when(beam.direction) {
-                    Direction.UP -> Direction.RIGHT
-                    Direction.RIGHT -> Direction.UP
-                    Direction.DOWN -> Direction.LEFT
-                    Direction.LEFT -> Direction.DOWN
-                }
-                val nextPosition = beam.getNextPosition(nextDirection)
-                if (isInBounds(nextPosition) && !isEnergised(nextPosition, nextDirection)) {
-                    beams.add(Beam(nextPosition, nextDirection))
-                }
+                checkAndMaybeAddBeam(beams, energised, beam, mirrorUpToRight(beam.direction))
             } else if (location == '-') {
                 // splitter
                 if (beam.direction == Direction.LEFT || beam.direction == Direction.RIGHT) {
                     // treat as empty space
-                    val nextPosition = beam.getNextPosition(beam.direction)
-                    if (isInBounds(nextPosition) && !isEnergised(nextPosition, beam.direction)) {
-                        beams.add(Beam(nextPosition, beam.direction))
-                    }
+                    checkAndMaybeAddBeam(beams, energised, beam, beam.direction)
                 } else {
-                    val nextPositionLeft = beam.getNextPosition(Direction.LEFT)
-                    if (isInBounds(nextPositionLeft) && !isEnergised(nextPositionLeft, Direction.LEFT)) {
-                        beams.add(Beam(nextPositionLeft, Direction.LEFT))
-                    }
-                    val nextPositionRight = beam.getNextPosition(Direction.RIGHT)
-                    if (isInBounds(nextPositionRight) && !isEnergised(nextPositionRight, Direction.RIGHT)) {
-                        beams.add(Beam(nextPositionRight, Direction.RIGHT))
-                    }
+                    checkAndMaybeAddBeam(beams, energised, beam, Direction.LEFT)
+                    checkAndMaybeAddBeam(beams, energised, beam, Direction.RIGHT)
                 }
             } else if (location == '|') {
                 // splitter
                 if (beam.direction == Direction.UP || beam.direction == Direction.DOWN) {
                     // treat as empty space
-                    val nextPosition = beam.getNextPosition(beam.direction)
-                    if (isInBounds(nextPosition) && !isEnergised(nextPosition, beam.direction)) {
-                        beams.add(Beam(nextPosition, beam.direction))
-                    }
+                    checkAndMaybeAddBeam(beams, energised, beam, beam.direction)
                 } else {
-                    val nextPositionUp = beam.getNextPosition(Direction.UP)
-                    if (isInBounds(nextPositionUp) && !isEnergised(nextPositionUp, Direction.UP)) {
-                        beams.add(Beam(nextPositionUp, Direction.UP))
-                    }
-                    val nextPositionDown = beam.getNextPosition(Direction.DOWN)
-                    if (isInBounds(nextPositionDown) && !isEnergised(nextPositionDown, Direction.DOWN)) {
-                        beams.add(Beam(nextPositionDown, Direction.DOWN))
-                    }
+                    checkAndMaybeAddBeam(beams, energised, beam, Direction.UP)
+                    checkAndMaybeAddBeam(beams, energised, beam, Direction.DOWN)
                 }
             }
         }
@@ -121,8 +112,42 @@ class Day16(path: String) {
         return energised.sumOf { row -> row.count { it != 0 } }
     }
 
+    fun part1(): Int {
+        return solve(initialBeam)
+    }
+
     fun part2(): Int {
-        return 0
+        var mostEnergised = 0
+
+        for (x in 0 until width) {
+            var beam = Beam(Point2D(x, 0), Direction.DOWN)
+            var count = solve(beam)
+            if (count > mostEnergised) {
+                mostEnergised = count
+            }
+
+            beam = Beam(Point2D(x, height - 1), Direction.UP)
+            count = solve(beam)
+            if (count > mostEnergised) {
+                mostEnergised = count
+            }
+        }
+
+        for (y in 0 until height) {
+            var beam = Beam(Point2D(0, y), Direction.RIGHT)
+            var count = solve(beam)
+            if (count > mostEnergised) {
+                mostEnergised = count
+            }
+
+            beam = Beam(Point2D(width - 1, y), Direction.LEFT)
+            count = solve(beam)
+            if (count > mostEnergised) {
+                mostEnergised = count
+            }
+        }
+
+        return mostEnergised
     }
 }
 
