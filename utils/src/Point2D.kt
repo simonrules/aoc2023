@@ -19,6 +19,10 @@ data class Point2D(val x: Int, val y: Int) {
         return Point2D(x - 1, y)
     }
 
+    fun move(dx: Int, dy: Int): Point2D {
+        return Point2D(x + dx, y + dy)
+    }
+
     fun manhattanDistance(other: Point2D): Int {
         return (x - other.x).absoluteValue + (y - other.y).absoluteValue
     }
