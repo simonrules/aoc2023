@@ -68,16 +68,16 @@ class Day20(filename: String) {
         }
     }
 
-    data class State(val from: String, val dest: String, val pulse: Boolean)
+    data class PulseState(val from: String, val dest: String, val pulse: Boolean)
 
     private fun countPulses(): Pair<Int, Int> {
-        var state = listOf(State("button", "broadcaster", false))
+        var pulseState = listOf(PulseState("button", "broadcaster", false))
         var lowPulses = 1
         var highPulses = 0
 
-        while (state.isNotEmpty()) {
-            val newState = mutableListOf<State>()
-            state.forEach { s ->
+        while (pulseState.isNotEmpty()) {
+            val newPulseState = mutableListOf<PulseState>()
+            pulseState.forEach { s ->
                 val module = modules[s.dest]
                 if (module != null) {
                     val result = process(s.from, s.dest, s.pulse)
@@ -90,17 +90,52 @@ class Day20(filename: String) {
                         module.dests.forEach { d ->
                             //val highLow = if (result) "high" else "low"
                             //println("${s.dest} -$highLow-> $d")
-                            newState.add(State(s.dest, d, result))
+                            newPulseState.add(PulseState(s.dest, d, result))
                         }
                     }
                 }
             }
-            state = newState.toList()
+            pulseState = newPulseState.toList()
         }
 
         //println()
 
         return Pair(lowPulses, highPulses)
+    }
+
+    private fun reset() {
+        modules.values.forEach { m ->
+            m.state = false
+            m.inputs.keys.forEach {
+                m.inputs[it] = false
+            }
+        }
+    }
+
+    private fun countPushesToLevel(name: String, level: Boolean): Int {
+        var pushes = 0
+        do {
+            pushes++
+            var pulseState = listOf(PulseState("button", "broadcaster", false))
+            while (pulseState.isNotEmpty()) {
+                val newPulseState = mutableListOf<PulseState>()
+                pulseState.forEach { s ->
+                    val module = modules[s.dest]
+                    if (module != null) {
+                        val result = process(s.from, s.dest, s.pulse)
+                        if (result != null) {
+                            if (s.dest == name && result == level) {
+                                return pushes
+                            }
+                            module.dests.forEach { d ->
+                                newPulseState.add(PulseState(s.dest, d, result))
+                            }
+                        }
+                    }
+                }
+                pulseState = newPulseState.toList()
+            }
+        } while (true)
     }
 
     fun part1(): Int {
@@ -115,9 +150,44 @@ class Day20(filename: String) {
 
         return lowSum * highSum
     }
+
+    fun part2(): Long {
+        // broadcaster -> pj, fg, bh, br
+        //  %pj -> zj, zq
+        //  %fg -> nt, gt
+        //  %bh -> qd, vv
+        //  %br -> vn, jz
+        //    &vv -> dm, bl, sb, nb, qd, bh
+        //    &nt -> rq, fg, ft, nd, gt, xz
+        //    &vn -> br, jz, ht, ps, zc, pp, ds
+        //    &zq -> fs, gr, ff, hf, ln, zj, pj
+        //      &sb -> zp
+        //      &nd -> zp
+        //      &ds -> zp
+        //      &hf -> zp
+        //        &zp -> rx
+
+        // Count the number of pushes for important conjunctions to go low
+        reset()
+        val vv = countPushesToLevel("vv", false)
+        reset()
+        val nt = countPushesToLevel("nt", false)
+        reset()
+        val vn = countPushesToLevel("vn", false)
+        reset()
+        val zq = countPushesToLevel("zq", false)
+
+        // vv = 3797
+        // nt = 3917
+        // vn = 3733
+        // zq = 3877
+
+        return vv.toLong() * nt.toLong() * vn.toLong() * zq.toLong()
+    }
 }
 
 fun main() {
     val day20 = Day20("day20/input.txt")
     println(day20.part1())
+    println(day20.part2())
 }
