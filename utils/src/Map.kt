@@ -1,6 +1,16 @@
 package com.simonrules.aoc2023.utils
 
 abstract class Plan2D<T>(val min: Point2D, val max: Point2D, val initial: T) {
+    val width: Int
+        get() = max.x - min.x + 1
+
+    val height: Int
+        get() = max.y - min.y + 1
+
+    fun inBounds(p: Point2D): Boolean {
+        return (p.x in min.x..max.x) && (p.y in min.y..max.y)
+    }
+
     abstract fun getAt(point: Point2D): T
     abstract fun setAt(point: Point2D, value: T)
     abstract fun count(value: T): Int
@@ -10,11 +20,6 @@ abstract class Plan2D<T>(val min: Point2D, val max: Point2D, val initial: T) {
 
 class ListPlan2D<T>(min: Point2D, max: Point2D, initial: T) : Plan2D<T>(min, max, initial) {
     private val data = MutableList(height) { MutableList(width) { initial } }
-    private val width: Int
-        get() = max.x - min.x + 1
-
-    private val height: Int
-        get() = max.y - min.y + 1
 
     private val offsetX: Int
         get() = -min.x
